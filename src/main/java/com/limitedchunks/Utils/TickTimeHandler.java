@@ -1,6 +1,5 @@
-package com.dynamic_view.Utils;
+package com.limitedchunks.Utils;
 
-import com.dynamic_view.ViewDistHandler.ServerDynamicViewDistanceManager;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 public class TickTimeHandler
@@ -42,7 +41,6 @@ public class TickTimeHandler
                 meanTickCount = 0;
                 meanTickSum = 0;
 
-                ServerDynamicViewDistanceManager.getInstance().updateViewDistForMeanTick(serverMeanTickTime);
             }
         }
     }

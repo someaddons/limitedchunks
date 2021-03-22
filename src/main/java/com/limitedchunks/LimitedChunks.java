@@ -1,8 +1,8 @@
-package com.dynamic_view;
+package com.limitedchunks;
 
-import com.dynamic_view.config.Configuration;
-import com.dynamic_view.event.EventHandler;
-import com.dynamic_view.event.ModBusEventHandler;
+import com.limitedchunks.config.Configuration;
+import com.limitedchunks.event.EventHandler;
+import com.limitedchunks.event.ModEventHandler;
 import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Constants.MOD_ID)
-public class DynView
+public class LimitedChunks
 {
     public static final Logger LOGGER = LogManager.getLogger();
 
@@ -24,12 +24,12 @@ public class DynView
      */
     private static Configuration config;
 
-    public DynView()
+    public LimitedChunks()
     {
         config = new Configuration();
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
         Mod.EventBusSubscriber.Bus.FORGE.bus().get().register(EventHandler.class);
-        Mod.EventBusSubscriber.Bus.MOD.bus().get().register(ModBusEventHandler.class);
+        Mod.EventBusSubscriber.Bus.MOD.bus().get().register(ModEventHandler.class);
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
     }
 
@@ -41,6 +41,6 @@ public class DynView
     private void setup(final FMLCommonSetupEvent event)
     {
         // some preinit code
-        LOGGER.info("Zooming chunks initiated!");
+        LOGGER.info("Limited chunkloading initialized");
     }
 }
