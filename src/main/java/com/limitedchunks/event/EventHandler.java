@@ -2,21 +2,20 @@ package com.limitedchunks.event;
 
 import com.limitedchunks.LimitedChunks;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.RegistryKey;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.Ticket;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.util.SortedArraySet;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.server.Ticket;
-import net.minecraft.world.server.TicketType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.fmlserverevents.FMLServerAboutToStartEvent;
 
 import java.util.*;
 
@@ -25,17 +24,26 @@ import java.util.*;
  */
 public class EventHandler
 {
+    /**
+     * Contains the positions that are/will be loaded by a player
+     */
+    static Map<ResourceKey<Level>, Long2ObjectOpenHashMap<UUID>> playerIDByPos = new HashMap<>();
+    static Map<ResourceKey<Level>, HashMap<UUID, Set<Long>>>     posByPlayerID = new HashMap<>();
+
+    // Pos to time to unload at
+    static Map<ResourceKey<Level>, Queue<ChunkPosAndTime>> unloadQue = new HashMap<>();
+
     @SubscribeEvent
     public static void onWorldTick(final TickEvent.WorldTickEvent event)
     {
-        if (event.world.isRemote || event.phase == TickEvent.Phase.START)
+        if (event.world.isClientSide() || event.phase == TickEvent.Phase.START)
         {
             return;
         }
 
-        final ServerWorld world = (ServerWorld) event.world;
+        final ServerLevel world = (ServerLevel) event.world;
 
-        Queue<ChunkPosAndTime> queue = unloadQue.get(world.getDimensionKey());
+        Queue<ChunkPosAndTime> queue = unloadQue.get(world.dimension());
         if (queue == null || queue.isEmpty())
         {
             return;
@@ -43,7 +51,7 @@ public class EventHandler
 
 
         final ChunkPosAndTime current = queue.peek();
-        if (current != null && current.time < world.getServer().getServerTime())
+        if (current != null && current.time < world.getServer().getNextTickTime())
         {
             queue.poll();
             checkLoadedAndClear(current.pos, world);
@@ -56,12 +64,12 @@ public class EventHandler
      * @param pos
      * @param world
      */
-    private static void checkLoadedAndClear(final long pos, final ServerWorld world)
+    private static void checkLoadedAndClear(final long pos, final ServerLevel world)
     {
-        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.getDimensionKey());
+        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.dimension());
         if (!(worldPositionsLoaded != null && worldPositionsLoaded.containsKey(pos)))
         {
-            final SortedArraySet<Ticket<?>> ticketsE = world.getChunkProvider().ticketManager.tickets.get(pos);
+            final SortedArraySet<Ticket<?>> ticketsE = world.getChunkSource().distanceManager.tickets.get(pos);
             if (ticketsE == null)
             {
                 return;
@@ -81,7 +89,7 @@ public class EventHandler
                     {
                         LimitedChunks.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + new ChunkPos(pos));
                     }
-                    world.getChunkProvider().ticketManager.release(pos, ticket);
+                    world.getChunkSource().distanceManager.removeTicket(pos, ticket);
                 }
             }
         }
@@ -102,34 +110,34 @@ public class EventHandler
     @SubscribeEvent
     public static void onChunkLoad(final ChunkEvent.Load event)
     {
-        if (event.getWorld().isRemote())
+        if (event.getWorld().isClientSide())
         {
             return;
         }
 
-        final ServerWorld world = (ServerWorld) event.getWorld();
-        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.getDimensionKey());
-        final long pos = event.getChunk().getPos().asLong();
+        final ServerLevel world = (ServerLevel) event.getWorld();
+        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.dimension());
+        final long pos = event.getChunk().getPos().toLong();
         if (worldPositionsLoaded != null && !worldPositionsLoaded.containsKey(pos))
         {
             // Que chunk to unload/check on later
-            final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.getDimensionKey(), s -> new PriorityQueue<>());
-            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getServerTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
+            final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.dimension(), s -> new PriorityQueue<>());
+            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getNextTickTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
         }
     }
 
     @SubscribeEvent
     public static void onChunkUnLoad(final ChunkEvent.Unload event)
     {
-        if (event.getWorld().isRemote())
+        if (event.getWorld().isClientSide())
         {
             return;
         }
 
-        final ServerWorld world = (ServerWorld) event.getWorld();
-        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.getDimensionKey());
-        final HashMap<UUID, Set<Long>> posByPlayerIDMap = posByPlayerID.get(world.getDimensionKey());
-        final long pos = event.getChunk().getPos().asLong();
+        final ServerLevel world = (ServerLevel) event.getWorld();
+        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.dimension());
+        final HashMap<UUID, Set<Long>> posByPlayerIDMap = posByPlayerID.get(world.dimension());
+        final long pos = event.getChunk().getPos().toLong();
         if (worldPositionsLoaded != null && worldPositionsLoaded.containsKey(pos))
         {
             final UUID player = worldPositionsLoaded.remove(pos);
@@ -149,52 +157,44 @@ public class EventHandler
     @SubscribeEvent
     public static void onPlayerLeave(final PlayerEvent.PlayerLoggedOutEvent event)
     {
-        if (event.getEntity().world.isRemote())
+        if (event.getEntity().level.isClientSide())
         {
             return;
         }
 
-        final ServerWorld world = (ServerWorld) event.getPlayer().world;
-        if (posByPlayerID.get(world.getDimensionKey()) == null)
+        final ServerLevel world = (ServerLevel) event.getPlayer().level;
+        if (posByPlayerID.get(world.dimension()) == null)
         {
             return;
         }
 
-        final Set<Long> chunksFromPlayer = posByPlayerID.get(world.getDimensionKey()).get(event.getPlayer().getUniqueID());
+        final Set<Long> chunksFromPlayer = posByPlayerID.get(world.dimension()).get(event.getPlayer().getUUID());
         if (chunksFromPlayer == null)
         {
             return;
         }
 
-        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.getDimensionKey());
-        final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.getDimensionKey(), s -> new PriorityQueue<>());
+        final Long2ObjectOpenHashMap<UUID> worldPositionsLoaded = playerIDByPos.get(world.dimension());
+        final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.dimension(), s -> new PriorityQueue<>());
         for (final long pos : chunksFromPlayer)
         {
             if (worldPositionsLoaded != null)
             {
-                if (worldPositionsLoaded.remove(pos, event.getPlayer().getUniqueID()))
+                if (worldPositionsLoaded.remove(pos, event.getPlayer().getUUID()))
                 {
-                    quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getServerTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
+                    quedChunks.add(new ChunkPosAndTime(pos,
+                      world.getServer().getNextTickTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
                 }
             }
         }
 
-        posByPlayerID.get(world.getDimensionKey()).remove(event.getPlayer().getUniqueID());
+        posByPlayerID.get(world.dimension()).remove(event.getPlayer().getUUID());
     }
-
-    /**
-     * Contains the positions that are/will be loaded by a player
-     */
-    static Map<RegistryKey<World>, Long2ObjectOpenHashMap<UUID>> playerIDByPos = new HashMap<>();
-    static Map<RegistryKey<World>, HashMap<UUID, Set<Long>>>     posByPlayerID = new HashMap<>();
-
-    // Pos to time to unload at
-    static Map<RegistryKey<World>, Queue<ChunkPosAndTime>> unloadQue = new HashMap<>();
 
     @SubscribeEvent
     public static void onPlayerEnter(final PlayerEvent.PlayerLoggedInEvent event)
     {
-        if (event.getEntity().world.isRemote() || !(event.getEntity() instanceof PlayerEntity))
+        if (event.getEntity().level.isClientSide() || !(event.getEntity() instanceof Player))
         {
             return;
         }
@@ -202,24 +202,50 @@ public class EventHandler
         final int viewDist = ServerLifecycleHooks.getCurrentServer().getPlayerList().getViewDistance();
 
         // Same chunk
-        int chunkXStart = event.getPlayer().chunkCoordX - viewDist;
-        int chunkZStart = event.getPlayer().chunkCoordZ - viewDist;
-        final int maxChunkX = event.getPlayer().chunkCoordX + viewDist;
-        final int maxChunkZ = event.getPlayer().chunkCoordZ + viewDist;
+        int playerX = event.getPlayer().chunkPosition().x;
+        int playerZ = event.getPlayer().chunkPosition().z;
 
-        addChunksFromTo(chunkXStart, chunkZStart, maxChunkX, maxChunkZ, (ServerWorld) event.getEntity().world, event.getPlayer());
+        int chunkXStart = playerX - viewDist;
+        int chunkZStart = playerZ - viewDist;
+        final int maxChunkX = playerX + viewDist;
+        final int maxChunkZ = playerZ + viewDist;
+
+        addChunksFromTo(chunkXStart, chunkZStart, maxChunkX, maxChunkZ, (ServerLevel) event.getEntity().level, event.getPlayer());
     }
 
+    private final static Map<UUID, ChunkPos> playerPos = new HashMap<>();
+
     @SubscribeEvent
-    public static void onChunkEnter(final PlayerEvent.EnteringChunk event)
+    public static void onChunkEnter(final TickEvent.PlayerTickEvent event)
     {
-        if (event.getEntity().world.isRemote() || !(event.getEntity() instanceof PlayerEntity))
+        if (event.player.level.isClientSide())
         {
             return;
         }
 
-        final boolean xChanged = event.getNewChunkX() != event.getOldChunkX();
-        final boolean zChanged = event.getNewChunkZ() != event.getOldChunkZ();
+        if (event.player.level.getGameTime() % 100 != 0)
+        {
+            return;
+        }
+
+        ChunkPos oldChunk = playerPos.get(event.player.getUUID());
+        if (oldChunk == null)
+        {
+            playerPos.put(event.player.getUUID(), event.player.chunkPosition());
+            // TODO: Remove chunks outside the previous radius from watch, que to unload
+            oldChunk = event.player.chunkPosition();
+        }
+
+        final boolean xChanged = oldChunk.x != event.player.getBlockX() >> 4;
+        final boolean zChanged = oldChunk.z != event.player.getBlockZ() >> 4;
+
+        if (!xChanged && !zChanged)
+        {
+            return;
+        }
+
+        final ChunkPos newChunk = event.player.chunkPosition();
+        playerPos.put(event.player.getUUID(), newChunk);
 
         final int viewDist = ServerLifecycleHooks.getCurrentServer().getPlayerList().getViewDistance();
         // new chunk Bsp -> X: -16 -> X: -15 -> -15 + view - (-15--16)
@@ -227,12 +253,12 @@ public class EventHandler
         int xMaxViewDist = viewDist + (xChanged ? 1 : 0);
         int zMaxViewDist = viewDist + (zChanged ? 1 : 0);
 
-        int chunkXStart = event.getNewChunkX() + (zChanged ? -viewDist : viewDist);
-        int chunkZStart = event.getNewChunkZ() + (xChanged ? -viewDist : viewDist);
-        final int maxChunkX = event.getNewChunkX() + xMaxViewDist;
-        final int maxChunkZ = event.getNewChunkZ() + zMaxViewDist;
+        int chunkXStart = newChunk.x + (zChanged ? -viewDist : viewDist);
+        int chunkZStart = newChunk.z + (xChanged ? -viewDist : viewDist);
+        final int maxChunkX = newChunk.x + xMaxViewDist;
+        final int maxChunkZ = newChunk.z + zMaxViewDist;
 
-        addChunksFromTo(chunkXStart, chunkZStart, maxChunkX, maxChunkZ, (ServerWorld) event.getEntity().world, (PlayerEntity) event.getEntity());
+        addChunksFromTo(chunkXStart, chunkZStart, maxChunkX, maxChunkZ, (ServerLevel) event.player.level, event.player);
     }
 
     /**
@@ -245,18 +271,18 @@ public class EventHandler
      * @param world
      * @param playerEntity
      */
-    private static void addChunksFromTo(final int xFrom, final int zFrom, final int xTo, final int zTo, final ServerWorld world, final PlayerEntity playerEntity)
+    private static void addChunksFromTo(final int xFrom, final int zFrom, final int xTo, final int zTo, final ServerLevel world, final Player playerEntity)
     {
-        final Long2ObjectOpenHashMap<UUID> positionsToLoad = playerIDByPos.computeIfAbsent(world.getDimensionKey(), e -> new Long2ObjectOpenHashMap<>());
-        final HashMap<UUID, Set<Long>> playerPositions = posByPlayerID.computeIfAbsent(world.getDimensionKey(), e -> new HashMap<>());
+        final Long2ObjectOpenHashMap<UUID> positionsToLoad = playerIDByPos.computeIfAbsent(world.dimension(), e -> new Long2ObjectOpenHashMap<>());
+        final HashMap<UUID, Set<Long>> playerPositions = posByPlayerID.computeIfAbsent(world.dimension(), e -> new HashMap<>());
 
         for (int x = xFrom; x <= xTo; x++)
         {
             for (int z = zFrom; z <= zTo; z++)
             {
                 final long currentPos = ChunkPos.asLong(x, z);
-                positionsToLoad.put(currentPos, playerEntity.getUniqueID());
-                playerPositions.computeIfAbsent(playerEntity.getUniqueID(), s -> new HashSet<>()).add(currentPos);
+                positionsToLoad.put(currentPos, playerEntity.getUUID());
+                playerPositions.computeIfAbsent(playerEntity.getUUID(), s -> new HashSet<>()).add(currentPos);
             }
         }
     }
@@ -265,7 +291,7 @@ public class EventHandler
      * Reset all values
      */
     @SubscribeEvent
-    public static void onServerAboutToStart(@NotNull final FMLServerAboutToStartEvent event)
+    public static void onServerAboutToStart(final FMLServerAboutToStartEvent event)
     {
         playerIDByPos = new HashMap<>();
         posByPlayerID = new HashMap<>();
