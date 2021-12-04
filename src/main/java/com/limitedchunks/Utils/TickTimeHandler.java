@@ -1,6 +1,6 @@
 package com.limitedchunks.Utils;
 
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 public class TickTimeHandler
 {

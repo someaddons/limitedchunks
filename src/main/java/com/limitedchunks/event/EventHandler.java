@@ -14,9 +14,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fmlserverevents.FMLServerAboutToStartEvent;
 
 import java.util.*;
 
@@ -233,7 +233,7 @@ public class EventHandler
      * Reset all values
      */
     @SubscribeEvent
-    public static void onServerAboutToStart(final FMLServerAboutToStartEvent event)
+    public static void onServerAboutToStart(final ServerAboutToStartEvent event)
     {
         posToPlayerID = new HashMap<>();
         playerIDToPos = new HashMap<>();
