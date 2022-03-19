@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "limitedchunks",
+  "version": "${version}",
+
+  "name": "Limited Chunkloading Mod",
+  "description": "Limited chunkloading allows dynamic unloading of chunkloaded chunks after a given time",
+  "authors": [
+    "Someaddon"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+
+  "license": "GPL3",
+  "icon": "assets/modid/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.limitedchunks.LimitedChunksMod"
+    ]
+  },
+  "mixins": [
+    "limitedchunks.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.11.3",
+    "fabric": "*",
+    "minecraft": "1.18.x",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
