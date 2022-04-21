@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(ServerChunkManager.class)
 public class ServerChunkManagerAccessorMixin implements ITicketManagerGetter
 {
-
     @Shadow
     @Final
     private ChunkTicketManager ticketManager;

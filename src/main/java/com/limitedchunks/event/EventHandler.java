@@ -47,21 +47,23 @@ public class EventHandler
         return playerIDToPos.computeIfAbsent(worldID, k -> new HashMap<>());
     }
 
-    public static void onWorldTick(final ServerWorld world)
+    public static void onWorldTick(final MinecraftServer server)
     {
-
-        Queue<ChunkPosAndTime> queue = unloadQue.get(world.getRegistryKey());
-        if (queue == null || queue.isEmpty())
+        for (final ServerWorld world : server.getWorlds())
         {
-            return;
-        }
+            Queue<ChunkPosAndTime> queue = unloadQue.get(world.getRegistryKey());
+            if (queue == null || queue.isEmpty())
+            {
+                return;
+            }
 
 
-        final ChunkPosAndTime current = queue.peek();
-        if (current != null && current.time < world.getServer().getTimeReference())
-        {
-            queue.poll();
-            checkLoadedAndClear(current.pos, world);
+            final ChunkPosAndTime current = queue.peek();
+            if (current != null && current.time < world.getServer().getTimeReference())
+            {
+                queue.poll();
+                checkLoadedAndClear(current.pos, world);
+            }
         }
     }
 
