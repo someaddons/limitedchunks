@@ -14,8 +14,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.*;
@@ -48,14 +48,14 @@ public class EventHandler
     }
 
     @SubscribeEvent
-    public static void onWorldTick(final TickEvent.WorldTickEvent event)
+    public static void onWorldTick(final TickEvent.LevelTickEvent event)
     {
-        if (event.world.isClientSide() || event.phase == TickEvent.Phase.START)
+        if (event.level.isClientSide() || event.phase == TickEvent.Phase.START)
         {
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.world;
+        final ServerLevel world = (ServerLevel) event.level;
 
         Queue<ChunkPosAndTime> queue = unloadQue.get(world.dimension());
         if (queue == null || queue.isEmpty())
@@ -149,12 +149,12 @@ public class EventHandler
     @SubscribeEvent
     public static void onChunkLoad(final ChunkEvent.Load event)
     {
-        if (event.getWorld().isClientSide())
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.getWorld();
+        final ServerLevel world = (ServerLevel) event.getLevel();
 
         final Player closeset = world.getNearestPlayer(event.getChunk().getPos().x << 4, 0, event.getChunk().getPos().z << 4, -1, null);
         final long pos = event.getChunk().getPos().toLong();
@@ -177,12 +177,12 @@ public class EventHandler
     @SubscribeEvent
     public static void onChunkUnLoad(final ChunkEvent.Unload event)
     {
-        if (event.getWorld().isClientSide())
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.getWorld();
+        final ServerLevel world = (ServerLevel) event.getLevel();
         final long pos = event.getChunk().getPos().toLong();
         final UUID playerID = getPosToPlayerIDMap(world.dimension()).remove(pos);
 
@@ -204,7 +204,7 @@ public class EventHandler
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.getPlayer().level;
+        final ServerLevel world = (ServerLevel) event.getEntity().level;
 
         for (final Map.Entry<ResourceKey<Level>, HashMap<UUID, LongSet>> dimEntry : playerIDToPos.entrySet())
         {
@@ -214,7 +214,7 @@ public class EventHandler
                 continue;
             }
 
-            final LongSet chunksFromPlayer = playerToPosMap.remove(event.getPlayer().getUUID());
+            final LongSet chunksFromPlayer = playerToPosMap.remove(event.getEntity().getUUID());
             if (chunksFromPlayer == null)
             {
                 continue;
