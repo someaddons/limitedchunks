@@ -92,7 +92,7 @@ public class EventHandler
         }
 
         final SortedArraySet<ChunkTicket<?>> ticketsE =
-          ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkManager()).getTicketManager()).getTicketsByPosition().get(pos);
+                ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkManager()).getTicketManager()).limitedchunks$getTicketsByPosition().get(pos);
         if (ticketsE == null)
         {
             return;
@@ -128,7 +128,7 @@ public class EventHandler
 
         for (final ChunkTicket<?> ticket : ticketsToRemove)
         {
-            ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkManager()).getTicketManager()).removeTicketAccessor(pos, ticket);
+            ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkManager()).getTicketManager()).limitedchunks$removeTicketAccessor(pos, ticket);
         }
     }
 

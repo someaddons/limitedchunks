@@ -20,14 +20,12 @@ public abstract class ChunkTicketManagerAccessorMixin implements IChunkTicketMan
     abstract void removeTicket(final long pos, final ChunkTicket<?> ticket);
 
     @Override
-    public Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> getTicketsByPosition()
-    {
+    public Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> limitedchunks$getTicketsByPosition() {
         return ticketsByPosition;
     }
 
     @Override
-    public void removeTicketAccessor(long pos, ChunkTicket<?> ticket)
-    {
+    public void limitedchunks$removeTicketAccessor(long pos, ChunkTicket<?> ticket) {
         removeTicket(pos, ticket);
     }
 }

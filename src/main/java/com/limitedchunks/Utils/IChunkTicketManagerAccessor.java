@@ -6,7 +6,7 @@ import net.minecraft.util.collection.SortedArraySet;
 
 public interface IChunkTicketManagerAccessor
 {
-    Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> getTicketsByPosition();
+    Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> limitedchunks$getTicketsByPosition();
 
-    void removeTicketAccessor(long pos, ChunkTicket<?> ticket);
+    void limitedchunks$removeTicketAccessor(long pos, ChunkTicket<?> ticket);
 }
