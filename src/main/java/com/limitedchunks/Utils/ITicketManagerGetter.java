@@ -1,8 +1,8 @@
 package com.limitedchunks.Utils;
 
-import net.minecraft.server.world.ChunkTicketManager;
+import net.minecraft.server.level.DistanceManager;
 
 public interface ITicketManagerGetter
 {
-    ChunkTicketManager getTicketManager();
+    DistanceManager getTicketManager();
 }
