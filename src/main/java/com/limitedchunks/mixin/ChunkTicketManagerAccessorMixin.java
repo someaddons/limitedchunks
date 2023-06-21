@@ -14,7 +14,7 @@ public abstract class ChunkTicketManagerAccessorMixin implements IChunkTicketMan
 {
     @Shadow
     @Final
-    private Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets;
+    Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets;
 
     @Shadow
     abstract void removeTicket(final long pos, final Ticket<?> ticket);

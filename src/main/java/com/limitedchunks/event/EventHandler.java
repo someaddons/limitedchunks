@@ -179,7 +179,7 @@ public class EventHandler
 
     public static void onPlayerLeave(final ServerPlayer player)
     {
-        final ServerLevel world = (ServerLevel) player.getLevel();
+        final ServerLevel world = (ServerLevel) player.level();
 
         for (final Map.Entry<ResourceKey<Level>, HashMap<UUID, LongSet>> dimEntry : playerIDToPos.entrySet())
         {
