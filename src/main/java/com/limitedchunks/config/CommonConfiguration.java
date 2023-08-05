@@ -1,14 +1,15 @@
 package com.limitedchunks.config;
 
+import com.cupboard.config.ICommonConfig;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.limitedchunks.LimitedChunksMod;
+import com.limitedchunks.event.EventHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommonConfiguration
+public class CommonConfiguration implements ICommonConfig
 {
     public int          chunkunloadnoplayer = 10;
     public boolean      debugLog            = false;
@@ -44,25 +45,15 @@ public class CommonConfiguration
 
     public void deserialize(JsonObject data)
     {
-        if (data == null)
+        chunkunloadnoplayer = data.get("chunkunloadnoplayer").getAsJsonObject().get("chunkunloadnoplayer").getAsInt();
+        debugLog = data.get("debugLog").getAsJsonObject().get("debugLog").getAsBoolean();
+        excludedtickets = new ArrayList<>();
+        for (final JsonElement element : data.get("excludedtickets").getAsJsonObject().get("excludedtickets").getAsJsonArray())
         {
-            LimitedChunksMod.LOGGER.error("Config file was empty!");
-            return;
+            excludedtickets.add(element.getAsString());
         }
 
-        try
-        {
-            chunkunloadnoplayer = data.get("chunkunloadnoplayer").getAsJsonObject().get("chunkunloadnoplayer").getAsInt();
-            debugLog = data.get("debugLog").getAsJsonObject().get("debugLog").getAsBoolean();
-            excludedtickets = new ArrayList<>();
-            for (final JsonElement element : data.get("excludedtickets").getAsJsonObject().get("excludedtickets").getAsJsonArray())
-            {
-                excludedtickets.add(element.getAsString());
-            }
-        }
-        catch (Exception e)
-        {
-            LimitedChunksMod.LOGGER.error("Could not parse config file", e);
-        }
+        EventHandler.initDefaultExcludes();
+        EventHandler.excludedTickets.addAll(excludedtickets);
     }
 }
