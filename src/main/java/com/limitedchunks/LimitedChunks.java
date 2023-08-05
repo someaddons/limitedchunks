@@ -1,8 +1,8 @@
 package com.limitedchunks;
 
-import com.limitedchunks.config.Configuration;
+import com.cupboard.config.CupboardConfig;
+import com.limitedchunks.config.CommonConfiguration;
 import com.limitedchunks.event.EventHandler;
-import com.limitedchunks.event.ModEventHandler;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -20,20 +20,13 @@ public class LimitedChunks
     /**
      * The config instance.
      */
-    private static Configuration config;
+    public static CupboardConfig<CommonConfiguration> config = new CupboardConfig<>(Constants.MOD_ID, new CommonConfiguration());
 
     public LimitedChunks()
     {
-        config = new Configuration();
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
         Mod.EventBusSubscriber.Bus.FORGE.bus().get().register(EventHandler.class);
-        Mod.EventBusSubscriber.Bus.MOD.bus().get().register(ModEventHandler.class);
         ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> "", (c, b) -> true));
-    }
-
-    public static Configuration getConfig()
-    {
-        return config;
     }
 
     private void setup(final FMLCommonSetupEvent event)

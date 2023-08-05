@@ -112,7 +112,7 @@ public class EventHandler
 
             if (!excludedTickets.contains(ticket.getType().toString()))
             {
-                if (LimitedChunks.getConfig().getCommonConfig().debugLog.get())
+                if (LimitedChunks.config.getCommonConfig().debugLog)
                 {
                     LimitedChunks.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + new ChunkPos(pos));
                 }
@@ -170,7 +170,7 @@ public class EventHandler
 
             // Que chunk to unload/check on later, no player associated
             final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.dimension(), s -> new PriorityQueue<>());
-            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getNextTickTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
+            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getNextTickTime() + LimitedChunks.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
         }
     }
 
@@ -224,7 +224,7 @@ public class EventHandler
             for (final long pos : chunksFromPlayer)
             {
                 quedChunks.add(new ChunkPosAndTime(pos,
-                  world.getServer().getNextTickTime() + LimitedChunks.getConfig().getCommonConfig().chunkunloadnoplayer.get() * 1000 * 60));
+                  world.getServer().getNextTickTime() + LimitedChunks.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
             }
         }
     }

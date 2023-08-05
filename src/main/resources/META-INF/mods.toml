@@ -51,3 +51,9 @@ Limited chunks mod which unloads chunks a give time after the last visiting play
     versionRange="[1.20,1.30)"
     ordering="NONE"
     side="SERVER"
+[[dependencies.limitedchunks]]
+    modId="cupboard"
+    mandatory=true
+    versionRange="[1.5,)"
+    ordering="NONE"
+    side="SERVER"
