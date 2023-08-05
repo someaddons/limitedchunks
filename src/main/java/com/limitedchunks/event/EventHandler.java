@@ -199,12 +199,12 @@ public class EventHandler
     @SubscribeEvent
     public static void onPlayerLeave(final PlayerEvent.PlayerLoggedOutEvent event)
     {
-        if (event.getEntity().level().isClientSide())
+        if (event.getEntity().level.isClientSide())
         {
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.getEntity().level();
+        final ServerLevel world = (ServerLevel) event.getEntity().level;
 
         for (final Map.Entry<ResourceKey<Level>, HashMap<UUID, LongSet>> dimEntry : playerIDToPos.entrySet())
         {

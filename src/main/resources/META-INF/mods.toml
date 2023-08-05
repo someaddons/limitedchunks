@@ -48,7 +48,7 @@ Limited chunks mod which unloads chunks a give time after the last visiting play
 [[dependencies.limitedchunks]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20,1.30)"
+    versionRange="[1.19,1.20)"
     ordering="NONE"
     side="SERVER"
 [[dependencies.limitedchunks]]
