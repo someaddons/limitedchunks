@@ -3,6 +3,8 @@ package com.limitedchunks;
 import com.cupboard.config.CupboardConfig;
 import com.limitedchunks.config.CommonConfiguration;
 import com.limitedchunks.event.EventHandler;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -27,6 +29,13 @@ public class LimitedChunks
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
         Mod.EventBusSubscriber.Bus.FORGE.bus().get().register(EventHandler.class);
         ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> "", (c, b) -> true));
+        Mod.EventBusSubscriber.Bus.FORGE.bus().get().addListener(this::commandRegister);
+    }
+
+    @SubscribeEvent
+    public void commandRegister(RegisterCommandsEvent event)
+    {
+        event.getDispatcher().register(new Command().build());
     }
 
     private void setup(final FMLCommonSetupEvent event)
