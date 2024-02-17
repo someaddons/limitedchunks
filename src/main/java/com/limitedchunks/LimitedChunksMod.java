@@ -4,6 +4,7 @@ import com.cupboard.config.CupboardConfig;
 import com.limitedchunks.config.CommonConfiguration;
 import com.limitedchunks.event.EventHandler;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -23,6 +24,12 @@ public class LimitedChunksMod implements ModInitializer
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated, c) ->
+        {
+            dispatcher.register(new Command().build());
+        });
+
         ServerTickEvents.END_SERVER_TICK.register(EventHandler::onWorldTick);
         ServerChunkEvents.CHUNK_LOAD.register(EventHandler::onChunkLoad);
         ServerChunkEvents.CHUNK_UNLOAD.register(EventHandler::onChunkUnLoad);

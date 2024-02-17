@@ -20,7 +20,7 @@ public class CommonConfiguration implements ICommonConfig
         final JsonObject root = new JsonObject();
 
         final JsonObject entry = new JsonObject();
-        entry.addProperty("desc:", "How long a player can keep chunkloaded chunks active after logging out."
+        entry.addProperty("desc:", "How many minutes chunkloaded chunks stay active after player logging out."
                                      + " default:10, min 0, max 2000");
         entry.addProperty("chunkunloadnoplayer", chunkunloadnoplayer);
         root.add("chunkunloadnoplayer", entry);
