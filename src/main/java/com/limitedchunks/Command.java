@@ -31,7 +31,14 @@ public class Command
                   level.getChunkSource().distanceManager.runAllUpdates(level.getChunkSource().chunkMap);
                   context.getSource().sendSystemMessage(Component.literal("Chunk tickets at: " + pos.toShortString()));
 
-                  for (final Ticket<?> ticket : level.getChunkSource().distanceManager.tickets.get(chunkPos.toLong()))
+                  final SortedArraySet<Ticket<?>> tickets = level.getChunkSource().distanceManager.tickets.get(chunkPos.toLong());
+                  if (tickets == null || tickets.isEmpty())
+                  {
+                      context.getSource().sendSystemMessage(Component.literal("None").withStyle(ChatFormatting.YELLOW));
+                      return 1;
+                  }
+
+                  for (final Ticket<?> ticket : tickets)
                   {
                       if (ticket != null)
                       {
@@ -53,6 +60,11 @@ public class Command
 
                 for (Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> entry : level.getChunkSource().distanceManager.tickets.long2ObjectEntrySet())
                 {
+                    if (entry.getValue() == null)
+                    {
+                        continue;
+                    }
+
                     boolean hasPLayer = false;
                     for (final Ticket<?> ticket : entry.getValue())
                     {
