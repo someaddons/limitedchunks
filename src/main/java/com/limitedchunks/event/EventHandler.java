@@ -12,11 +12,11 @@ import net.minecraft.util.SortedArraySet;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import java.util.*;
 
@@ -48,14 +48,14 @@ public class EventHandler
     }
 
     @SubscribeEvent
-    public static void onWorldTick(final TickEvent.LevelTickEvent event)
+    public static void onWorldTick(final LevelTickEvent.Post event)
     {
-        if (event.level.isClientSide() || event.phase == TickEvent.Phase.START)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        final ServerLevel world = (ServerLevel) event.level;
+        final ServerLevel world = (ServerLevel) event.getLevel();
 
         Queue<ChunkPosAndTime> queue = unloadQue.get(world.dimension());
         if (queue == null || queue.isEmpty())
