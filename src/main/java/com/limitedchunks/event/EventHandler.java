@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.util.SortedArraySet;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -96,14 +95,14 @@ public class EventHandler
             }
         }
 
-        final SortedArraySet<Ticket<?>> ticketsE = world.getChunkSource().distanceManager.tickets.get(pos);
-        if (ticketsE == null)
+        final List<Ticket> ticketsE = world.getChunkSource().distanceManager.ticketStorage.tickets.get(pos);
+        if (ticketsE == null || ticketsE.isEmpty())
         {
             return;
         }
 
-        final List<Ticket<?>> ticketsToRemove = new ArrayList<>();
-        for (final Ticket<?> ticket : ticketsE)
+        final List<Ticket> ticketsToRemove = new ArrayList<>();
+        for (final Ticket ticket : ticketsE)
         {
             if (ticket == null)
             {
@@ -114,14 +113,14 @@ public class EventHandler
             {
                 if (LimitedChunks.config.getCommonConfig().debugLog)
                 {
-                    LimitedChunks.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + new ChunkPos(pos));
+                    LimitedChunks.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + ChunkPos.unpack(pos));
                 }
                 ticketsToRemove.add(ticket);
             }
-            else if (ticket.getType() == TicketType.PLAYER)
+            else if (ticket.getType() == TicketType.PLAYER_LOADING)
             {
-                final ChunkPos chunkPos = new ChunkPos(pos);
-                final Player closeset = world.getNearestPlayer(chunkPos.x << 4, 0, chunkPos.z << 4, -1, null);
+                final ChunkPos chunkPos = ChunkPos.unpack(pos);
+                final Player closeset = world.getNearestPlayer(chunkPos.x() << 4, 0, chunkPos.z() << 4, -1, null);
                 if (closeset != null)
                 {
                     worldPositionsLoaded.put(pos, closeset.getUUID());
@@ -130,18 +129,19 @@ public class EventHandler
             }
         }
 
-        for (final Ticket<?> ticket : ticketsToRemove)
+        for (final Ticket ticket : ticketsToRemove)
         {
-            world.getChunkSource().distanceManager.removeTicket(pos, ticket);
+            world.getChunkSource().distanceManager.ticketStorage.removeTicket(pos, ticket);
         }
     }
 
     public static void initDefaultExcludes()
     {
         excludedTickets = new HashSet<>();
-        excludedTickets.add(TicketType.POST_TELEPORT.toString());
-        excludedTickets.add(TicketType.PLAYER.toString());
-        excludedTickets.add(TicketType.START.toString());
+        excludedTickets.add(TicketType.PLAYER_SPAWN.toString());
+        excludedTickets.add(TicketType.SPAWN_SEARCH.toString());
+        excludedTickets.add(TicketType.PLAYER_LOADING.toString());
+        excludedTickets.add(TicketType.PLAYER_SIMULATION.toString());
         excludedTickets.add(TicketType.UNKNOWN.toString());
         excludedTickets.add(TicketType.PORTAL.toString());
     }
@@ -156,8 +156,8 @@ public class EventHandler
 
         final ServerLevel world = (ServerLevel) event.getLevel();
 
-        final Player closeset = world.getNearestPlayer(event.getChunk().getPos().x << 4, 0, event.getChunk().getPos().z << 4, -1, null);
-        final long pos = event.getChunk().getPos().toLong();
+        final Player closeset = world.getNearestPlayer(event.getChunk().getPos().x() << 4, 0, event.getChunk().getPos().z() << 4, -1, null);
+        final long pos = event.getChunk().getPos().pack();
 
         if (closeset != null)
         {
@@ -183,7 +183,7 @@ public class EventHandler
         }
 
         final ServerLevel world = (ServerLevel) event.getLevel();
-        final long pos = event.getChunk().getPos().toLong();
+        final long pos = event.getChunk().getPos().pack();
         final UUID playerID = getPosToPlayerIDMap(world.dimension()).remove(pos);
 
         if (playerID != null)
