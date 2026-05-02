@@ -1,8 +1,6 @@
 package com.limitedchunks.event;
 
-import com.limitedchunks.LimitedChunksMod;
-import com.limitedchunks.Utils.IChunkTicketManagerAccessor;
-import com.limitedchunks.Utils.ITicketManagerGetter;
+import com.limitedchunks.LimitedChunks;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -12,7 +10,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.util.SortedArraySet;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -91,15 +88,14 @@ public class EventHandler
             }
         }
 
-        final SortedArraySet<Ticket<?>> ticketsE =
-          ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkSource()).getTicketManager()).limitedchunks$getTicketsByPosition().get(pos);
-        if (ticketsE == null)
+        final List<Ticket> ticketsE = world.getChunkSource().distanceManager.ticketStorage.tickets.get(pos);
+        if (ticketsE == null || ticketsE.isEmpty())
         {
             return;
         }
 
-        final List<Ticket<?>> ticketsToRemove = new ArrayList<>();
-        for (final Ticket<?> ticket : ticketsE)
+        final List<Ticket> ticketsToRemove = new ArrayList<>();
+        for (final Ticket ticket : ticketsE)
         {
             if (ticket == null)
             {
@@ -108,16 +104,16 @@ public class EventHandler
 
             if (!excludedTickets.contains(ticket.getType().toString()))
             {
-                if (LimitedChunksMod.config.getCommonConfig().debugLog)
+                if (LimitedChunks.config.getCommonConfig().debugLog)
                 {
-                    LimitedChunksMod.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + new ChunkPos(pos));
+                    LimitedChunks.LOGGER.info("Unloading ticket:" + ticket.getType().toString() + " at chunkpos:" + ChunkPos.unpack(pos));
                 }
                 ticketsToRemove.add(ticket);
             }
-            else if (ticket.getType() == TicketType.PLAYER)
+            else if (ticket.getType() == TicketType.PLAYER_LOADING)
             {
-                final ChunkPos chunkPos = new ChunkPos(pos);
-                final Player closeset = world.getNearestPlayer(chunkPos.x << 4, 0, chunkPos.z << 4, -1, null);
+                final ChunkPos chunkPos = ChunkPos.unpack(pos);
+                final Player closeset = world.getNearestPlayer(chunkPos.x() << 4, 0, chunkPos.z() << 4, -1, null);
                 if (closeset != null)
                 {
                     worldPositionsLoaded.put(pos, closeset.getUUID());
@@ -126,26 +122,27 @@ public class EventHandler
             }
         }
 
-        for (final Ticket<?> ticket : ticketsToRemove)
+        for (final Ticket ticket : ticketsToRemove)
         {
-            ((IChunkTicketManagerAccessor) ((ITicketManagerGetter) world.getChunkSource()).getTicketManager()).limitedchunks$removeTicketAccessor(pos, ticket);
+            world.getChunkSource().distanceManager.ticketStorage.removeTicket(pos, ticket);
         }
     }
 
     public static void initDefaultExcludes()
     {
         excludedTickets = new HashSet<>();
-        excludedTickets.add(TicketType.POST_TELEPORT.toString());
-        excludedTickets.add(TicketType.PLAYER.toString());
-        excludedTickets.add(TicketType.START.toString());
+        excludedTickets.add(TicketType.PLAYER_SPAWN.toString());
+        excludedTickets.add(TicketType.SPAWN_SEARCH.toString());
+        excludedTickets.add(TicketType.PLAYER_LOADING.toString());
+        excludedTickets.add(TicketType.PLAYER_SIMULATION.toString());
         excludedTickets.add(TicketType.UNKNOWN.toString());
         excludedTickets.add(TicketType.PORTAL.toString());
     }
 
-    public static void onChunkLoad(final ServerLevel world, final LevelChunk LevelChunk)
+    public static void onChunkLoad(final ServerLevel world, final LevelChunk LevelChunk, final boolean b)
     {
-        final Player closeset = world.getNearestPlayer(LevelChunk.getPos().x << 4, 0, LevelChunk.getPos().z << 4, -1, null);
-        final long pos = LevelChunk.getPos().toLong();
+        final Player closeset = world.getNearestPlayer(LevelChunk.getPos().x() << 4, 0, LevelChunk.getPos().z() << 4, -1, null);
+        final long pos = LevelChunk.getPos().pack();
 
         if (closeset != null)
         {
@@ -158,13 +155,13 @@ public class EventHandler
 
             // Que chunk to unload/check on later, no player associated
             final Queue<ChunkPosAndTime> quedChunks = unloadQue.computeIfAbsent(world.dimension(), s -> new PriorityQueue<>());
-            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getNextTickTime() + LimitedChunksMod.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
+            quedChunks.add(new ChunkPosAndTime(pos, world.getServer().getNextTickTime() + LimitedChunks.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
         }
     }
 
     public static void onChunkUnLoad(final ServerLevel world, final LevelChunk LevelChunk)
     {
-        final long pos = LevelChunk.getPos().toLong();
+        final long pos = LevelChunk.getPos().pack();
         final UUID playerID = getPosToPlayerIDMap(world.dimension()).remove(pos);
 
         if (playerID != null)
@@ -199,7 +196,7 @@ public class EventHandler
             for (final long pos : chunksFromPlayer)
             {
                 quedChunks.add(new ChunkPosAndTime(pos,
-                  world.getServer().getNextTickTime() + (long) LimitedChunksMod.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
+                    world.getServer().getNextTickTime() + (long) LimitedChunks.config.getCommonConfig().chunkunloadnoplayer * 1000 * 60));
             }
         }
     }

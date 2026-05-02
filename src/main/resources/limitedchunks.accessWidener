@@ -1,3 +1,4 @@
-accessWidener   v2  named
+accessWidener   v2  official
 accessible field net/minecraft/server/level/ServerChunkCache distanceManager Lnet/minecraft/server/level/DistanceManager;
-accessible field net/minecraft/server/level/DistanceManager tickets Lit/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap;
+accessible field net/minecraft/server/level/DistanceManager ticketStorage Lnet/minecraft/world/level/TicketStorage;
+accessible field net/minecraft/world/level/TicketStorage tickets Lit/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap;

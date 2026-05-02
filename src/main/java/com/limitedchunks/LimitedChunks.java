@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class LimitedChunksMod implements ModInitializer
+public class LimitedChunks implements ModInitializer
 {
     public static final String                              MODID  = "limitedchunks";
     public static final Logger                              LOGGER = LogManager.getLogger();

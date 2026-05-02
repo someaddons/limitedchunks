@@ -4,9 +4,7 @@
   "package": "com.limitedchunks.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ChunkTicketManagerAccessorMixin",
-    "PlayerLeaveHookMixin",
-    "ServerChunkManagerAccessorMixin"
+    "PlayerLeaveHookMixin"
   ],
   "client": [
   ],

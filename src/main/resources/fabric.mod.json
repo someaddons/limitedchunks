@@ -19,7 +19,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.limitedchunks.LimitedChunksMod"
+      "com.limitedchunks.LimitedChunks"
     ]
   },
   "mixins": [
@@ -28,8 +28,8 @@
   "accessWidener": "limitedchunks.accessWidener",
   "depends": {
     "fabricloader": ">=0.11.3",
-    "fabric": "*",
-    "minecraft": "1.21.x",
+    "fabric-api": "*",
+    "minecraft": "26.x",
     "cupboard": "*",
     "java": ">=17"
   },
