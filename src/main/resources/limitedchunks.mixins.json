@@ -1,8 +1,6 @@
 {
   "required": false,
   "package": "com.limitedchunks.mixin",
-  "compatibilityLevel": "JAVA_21",
-  "refmap": "limitedchunks.refmap.json",
   "mixins": [
   ],
   "client": [
